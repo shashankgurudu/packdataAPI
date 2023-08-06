@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -35,7 +36,7 @@ public class CombinedDataController {
     private RestTemplate restTemplate;
 
     @PostMapping("/getCombinedData")
-    public List<CombinedPackData> getCombinedData(@RequestBody Map<String, Integer> payload) throws JsonProcessingException {
+    public ResponseEntity<CombinedPackData> getCombinedData(@RequestBody Map<String, Integer> payload) throws JsonProcessingException {
 
         final Logger log = LoggerFactory.getLogger(CombinedDataController.class);
 
@@ -54,9 +55,7 @@ public class CombinedDataController {
         List<Customer> pack1CustomerList = objectMapper.readValue(pack1Data, new TypeReference<List<Customer>>(){});
         List<Customer> pack2CustomerList = objectMapper.readValue(pack2Data, new TypeReference<List<Customer>>(){});
 
-    
-        List<CombinedPackData> combinedPackDataList = new ArrayList<>(4);
-
+        CombinedPackData combinedPackData = new CombinedPackData();
         try {
                 
             Optional<Customer> pack1Customer = pack1CustomerList.stream()
@@ -78,22 +77,16 @@ public class CombinedDataController {
             List<String> pack2List =  getPackListFromCustomerPackData(pack2CustomerPackData);
             log.info("pack2List " + pack2List);
             
-            CombinedPackData combinedPackData = new CombinedPackData();
             combinedPackData.setCustomer_id(requestedCustomerId);
             combinedPackData.setId(pack1Customer.get().getId());
             combinedPackData.setPack1(pack1List);
             combinedPackData.setPack2(pack2List);
-            
-            
-
-            combinedPackDataList.add(combinedPackData);
-            
 
         } catch (Exception e) {
-            // TODO: handle exception
+            return (ResponseEntity<CombinedPackData>) ResponseEntity.badRequest();
         }
 
-        return combinedPackDataList;
+        return ResponseEntity.ok(combinedPackData);
     }
 
     private List<String> getPackListFromCustomerPackData(List<Inventory> pack1CustomerPackData) {
